@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../../css/pages/scriptCraft/ScriptCraft.css";
-import { createHandleChange } from "../../common/utils";
+import { ClipboardCopy, createHandleChange } from "../../common/utils";
 
 const CraftVanilaJS = () => {
     const initState = {inputText: "", outputText: ""};
@@ -15,6 +15,14 @@ const CraftVanilaJS = () => {
         setTagInfo((prev) => ({...prev, outputText: dom}));
     }
 
+    const fn_copy = () => {
+        const copyTxt = tagInfo.outputText;
+        ClipboardCopy(copyTxt);
+    }
+
+    // ====================================================================================
+    // HTML CODE TO VANILA JS PARSER LINE
+    // ====================================================================================
     type ASTNode =
     | { type: "element"; tag: string; attributes: Record<string, string>; children: ASTNode[] }
     | { type: "text"; content: string };
@@ -44,10 +52,10 @@ const CraftVanilaJS = () => {
         let match: RegExpExecArray | null;
 
         const pushTextNode = (text: string, parent?: ASTNode) => {
-        const trimmed = text.trim();
-        if (trimmed && parent && parent.type === "element") {
-            parent.children.push({ type: "text", content: trimmed });
-        }
+            const trimmed = text.trim();
+            if (trimmed && parent && parent.type === "element") {
+                parent.children.push({ type: "text", content: trimmed });
+            }
         };
 
         while ((match = tagRegex.exec(html)) !== null) {
@@ -145,7 +153,7 @@ const CraftVanilaJS = () => {
                     <div className="input-group">
                         <div className="output-header">
                             <label className="label">분석 결과</label>
-                            <button id="copyBtn" className="btn-small btn-copy">클립보드 복사</button>
+                            <button id="copyBtn" className="btn-small btn-copy" onClick={fn_copy}>클립보드 복사</button>
                         </div>
                         <textarea
                             name="outputInfo"
