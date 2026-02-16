@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "../../css/pages/scriptCraft/ScriptCraft.css";
 import { ClipboardCopy, createHandleChange } from "../../common/utils";
 
