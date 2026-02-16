@@ -126,8 +126,6 @@ const CraftVanilaJS = () => {
         return generate(node);
     };
 
-
-
     return (
         <>
         <div className="container">
