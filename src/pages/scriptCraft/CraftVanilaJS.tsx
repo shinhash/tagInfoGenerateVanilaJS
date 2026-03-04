@@ -1,4 +1,5 @@
 import { useState } from "react";
+// import { Children, useState } from "react";
 import "../../css/pages/scriptCraft/ScriptCraft.css";
 import { ClipboardCopy, createHandleChange } from "../../common/utils";
 
@@ -9,15 +10,12 @@ const CraftVanilaJS = () => {
     // 입력 액션
     const objectChange = createHandleChange(setTagInfo);
     
-    const fn_analyze = () => {
+    // 이전 코드 주석처리
+    /*
+    const fn_analyze_back = () => {
         const result = fn_parseHTML(tagInfo.inputText);
         const dom = buildDOMCode(result as any);
         setTagInfo((prev) => ({...prev, outputText: dom}));
-    }
-
-    const fn_copy = () => {
-        const copyTxt = tagInfo.outputText;
-        ClipboardCopy(copyTxt);
     }
 
     // ====================================================================================
@@ -125,12 +123,119 @@ const CraftVanilaJS = () => {
         };
         return generate(node);
     };
+    */
 
+
+    /**
+     * 분석하기 클릭
+     */
+    const fn_analyze = () => {
+        if(!tagInfo.inputText?.trim()) return;
+
+        const node = fn_parseTEXT2HTML(tagInfo.inputText);
+        const code = fn_drawHTML(node, 1);
+        setTagInfo((prev) => ({...prev, outputText: code}));
+    }
+
+    /**
+     * 클립보드 복사 클릭
+     */
+    const fn_copy = () => {
+        const copyTxt = tagInfo.outputText;
+        ClipboardCopy(copyTxt);
+    }
+
+    /**
+     * tag 문자열 값 node 반환
+     * @param htmlStr 
+     * @returns node
+     */
+    const fn_parseTEXT2HTML = (htmlStr : string) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlStr, "text/html");
+        const rootElement = doc.body.firstChild;
+        return fn_buildTree(rootElement);
+    }
+    /**
+     * element 값을 통해 node 생성 후 반환
+     * @param element 
+     * @returns node
+     */
+    const fn_buildTree = (element : any) => {
+        // Text Node
+        if(element.nodeType === Node.TEXT_NODE){
+            const text = element.nodeValue.trim();
+            if(text.length > 0) { 
+                return { type:"text", content:text }; 
+            }
+            return null;
+        }
+        // Element Node
+        if(element.nodeType === Node.ELEMENT_NODE){
+            const attrDict : Record<string, string> = {};
+
+            for(let i=0; i<element.attributes.length; i++){
+                const attr = element.attributes[i];
+                if(attr.name !== "class") { attrDict[attr.name] = attr.value; }
+            }
+            // current node infomation create
+            const node : any = {
+                type:"element",
+                tag : element.tagName.toLowerCase(),
+                classNm : [...element.classList],
+                attributes : attrDict,
+                children : [],
+            };
+            // child node search
+            element.childNodes.forEach((child : any) => {
+                const childTree = fn_buildTree(child);
+                if(childTree !== null) node.children.push(childTree);
+            });
+            return node;
+        }
+        return null;
+    }
+
+    /**
+     * createElement 문자열 반환
+     * @param node 
+     * @param nodeIndex 
+     * @returns code
+     */
+    const fn_drawHTML = (node : any, nodeIndex : number) => {
+        // 태그 선언명
+        let code = "";
+        const constNm = `${node.tag}_${(nodeIndex++).toString().padStart(3, "0")}`;
+        try{
+            // node type
+            if(node.type === "text"){ return code += `${constNm}.innerText("${node.content}");\n`; }
+            // 태그 생성문
+            code += `\nconst ${constNm} = document.createElement("${node.tag}");\n`;
+            // 태그 class
+            code += `${constNm}.className="${(node.classNm).join(" ").toString()}";\n`;
+            // 태그 attributes
+            Object.entries(node.attributes).forEach(([key, value]) => {
+                code += `${constNm}.setAttribute("${key}", "${value}");\n`;
+            });
+
+            node.children.forEach((child : any) => {
+                // node type
+                if(child.type === "text"){ return code += `${constNm}.innerText("${child.content}");\n`; }
+                // node type
+                code += fn_drawHTML(child, nodeIndex++);
+                code += `${constNm}.appendChild(${child.tag}_${(nodeIndex-1).toString().padStart(3, "0")});\n`;
+                nodeIndex++;
+            });
+        }catch(err){
+            console.error(err);
+        }
+        return code;
+    }
     return (
         <>
         <div className="container">
             <div className="wrapper">
-                <h1 className="title">HTML 분석기</h1>
+                <h1 className="title">HTML 태그 생성기</h1>
                 
                 <div className="content">
                     <div className="input-group">
